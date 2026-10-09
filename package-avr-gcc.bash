@@ -82,6 +82,7 @@ elif [[ $OS == "Darwin" ]] ; then
   DARWIN_VERSION=${DARWIN_VERSION:-$(echo "$UNAME_INFO" | awk '{split($3, version, "."); print version[1]}')}
   export MACOSX_ARCH MACOSX_DEPLOYMENT_TARGET DARWIN_VERSION
   export CC="gcc -arch ${MACOSX_ARCH} -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+  export CC_FOR_BUILD="gcc -arch ${MACOSX_ARCH} -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
   export CXX="g++ -arch ${MACOSX_ARCH} -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
   OUTPUT_TAG=${MACOSX_ARCH}-apple-darwin${DARWIN_VERSION}
 
