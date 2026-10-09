@@ -39,6 +39,7 @@ export TARGET_OS=$OS
 
 START_GROUP=-Wl,--start-group
 END_GROUP=-Wl,--end-group
+CXXRUNTIMELIBS=""
 
 function fetch_llvm {
   fetched=`basename $1`
@@ -104,6 +105,8 @@ elif [[ $OS == "Darwin" ]] ; then
   	fetch_llvm https://github.com/cmaglie/llvm-clang-build-scripts/releases/download/4.0.0/llvm-clang-4.0.0-macosx-10.9-x86_64.tar.bz2
   else
   	fetch_llvm https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.3/LLVM-23.1.3-macOS-ARM64.tar.xz
+    export CXX="$CXX -fuse-ld=lld -B$(pwd)/clang/bin -nostdlib++"
+    CXXRUNTIMELIBS="clang/lib/libc++.a clang/lib/libc++abi.a clang/lib/libunwind.a"
   fi
   START_GROUP=""
   END_GROUP=""
@@ -121,14 +124,24 @@ fi
 #
 
 CXXFLAGS="`clang/bin/llvm-config --cxxflags` $CXXFLAGS"
-LDFLAGS="`clang/bin/llvm-config --ldflags` -static-libstdc++"
+LDFLAGS="`clang/bin/llvm-config --ldflags`"
+if [[ $OS != "Darwin" ]] ; then
+  LDFLAGS="$LDFLAGS -static-libstdc++"
+fi
 CXXFLAGS="${CXXFLAGS//-arch=x86_64/}"
 LDFLAGS="${LDFLAGS//-arch=x86_64/}"
+CXXFLAGS="${CXXFLAGS//-flto/}"
+LDFLAGS="${LDFLAGS//-flto/}"
 LLVMLIBS=`clang/bin/llvm-config --libs --system-libs`
 CLANGLIBS=`ls clang/lib/libclang*.a | sed s/.*libclang/-lclang/ | sed s/.a$//`
 SOURCES="main.cpp ArduinoDiagnosticConsumer.cpp CommandLine.cpp IdentifiersList.cpp CodeCompletion.cpp"
-$CXX $SOURCES -o objdir/arduino-preprocessor $CXXFLAGS $LDFLAGS $START_GROUP $LLVMLIBS $CLANGLIBS $END_GROUP
-strip objdir/*
+$CXX $SOURCES -o objdir/arduino-preprocessor $CXXFLAGS $LDFLAGS $START_GROUP $LLVMLIBS $CLANGLIBS $END_GROUP $CXXRUNTIMELIBS
+if [[ $OS == "Darwin" && $MACOSXARCH != "x86_64" ]] ; then
+  # Keep LLD's arm64 code signature intact; strip would invalidate it.
+  :
+else
+  strip objdir/*
+fi
 
 rm -f arduino-preprocessor-${OUTPUT_VERSION}-${OUTPUT_TAG}.tar.bz2
 mv objdir arduino-preprocessor
@@ -138,4 +151,3 @@ cp cygwin-prebuilt/* arduino-preprocessor
 fi
 
 tar -cjvf arduino-preprocessor-${OUTPUT_VERSION}-${OUTPUT_TAG}.tar.bz2 arduino-preprocessor
-
