@@ -18,6 +18,7 @@
 ARDUINO_PREPROCESSOR_VERSION=`cat Config.hpp | grep VERSION | sed 's/[^"]*"\([^"]*\)".*/\1/'`
 
 OUTPUT_VERSION=${ARDUINO_PREPROCESSOR_VERSION}
+MACOSXARCH="${MACOSXARCH:-$(uname -m)}"
 
 #
 # Clean up workspace
@@ -98,8 +99,8 @@ elif [[ $OS == "Msys" || $OS == "Cygwin" ]] ; then
 elif [[ $OS == "Darwin" ]] ; then
 
   #export PATH=/opt/local/libexec/gnubin/:/opt/local/bin:$PATH
-  export CC="gcc -arch x86_64 -mmacosx-version-min=10.9"
-  export CXX="g++ -arch x86_64 -mmacosx-version-min=10.9"
+  export CC="gcc -arch $MACOSXARCH -mmacosx-version-min=10.9"
+  export CXX="g++ -arch $MACOSXARCH -mmacosx-version-min=10.9"
   OUTPUT_TAG=x86_64-apple-darwin11
   export CXXFLAGS="-stdlib=libc++ -std=c++11"
   fetch_llvm https://github.com/cmaglie/llvm-clang-build-scripts/releases/download/4.0.0/llvm-clang-4.0.0-macosx-10.9-x86_64.tar.bz2
