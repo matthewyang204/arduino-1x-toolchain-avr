@@ -12,7 +12,7 @@ gmp/
 mpc/
 mpfr/
 hostlibs/
-avr-gcc.tar.bz2
+avr-gcc*.tar.bz2
 gcc
 avr-gdb.tar.bz2
 gdb
