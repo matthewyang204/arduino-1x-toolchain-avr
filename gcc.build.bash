@@ -91,6 +91,7 @@ CONFARGS=" \
     --with-avrlibc=yes \
 	--with-dwarf2 \
     --disable-doc \
+	--disable-libcc1 \
 	--build=aarch64-apple-darwin \
 	--host=aarch64-apple-darwin \
 	--with-system-zlib \
