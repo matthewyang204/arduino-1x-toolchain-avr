@@ -1,0 +1,30 @@
+From 41394071b7ff061a38a9d4a11f5f676e4a9ff859 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Matthew=20Yang=20=28=E6=9D=A8=E4=BD=B3=E6=98=8E=29?=
+ <matthew.yang204@gmail.com>
+Date: Thu, 8 Oct 2026 20:23:19 -0700
+Subject: [PATCH] Patch fdopen issues
+
+---
+ zlib/zutil.h | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/zlib/zutil.h b/zlib/zutil.h
+index ed6b127e..e42a0caf 100644
+--- a/zlib/zutil.h
++++ b/zlib/zutil.h
+@@ -124,9 +124,9 @@ extern const char * const z_errmsg[10]; /* indexed by 2-zlib_error */
+ #    if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
+ #      include <unix.h> /* for fdopen */
+ #    else
+-#      ifndef fdopen
+-#        define fdopen(fd,mode) NULL /* No fdopen() */
+-#      endif
++#        if !defined(__APPLE__) && !defined(fdopen)
++#          define fdopen(fd,mode) NULL
++#        endif
+ #    endif
+ #  endif
+ #endif
+-- 
+2.56.0
+
