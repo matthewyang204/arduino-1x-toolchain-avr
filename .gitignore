@@ -21,5 +21,9 @@ mpc-0.9.tar.gz
 mpfr-3.0.0.tar.bz2
 avr
 gcc-*.tar.xz
+gcc-*/
 gmp-*.tar.bz2
+gmp-*/
+mpc-*/
 mpfr-*.tar.bz2
+mpfr-*/
