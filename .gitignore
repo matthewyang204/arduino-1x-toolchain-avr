@@ -20,3 +20,6 @@ gmp-5.0.2.tar.bz2
 mpc-0.9.tar.gz
 mpfr-3.0.0.tar.bz2
 avr
+gcc-*.tar.xz
+gmp-*.tar.bz2
+mpfr-*.tar.bz2
