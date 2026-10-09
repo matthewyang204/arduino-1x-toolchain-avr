@@ -1,0 +1,26 @@
+From 906ffc6abbca1939cda69e39890e2a3e688a7969 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Matthew=20Yang=20=28=E6=9D=A8=E4=BD=B3=E6=98=8E=29?=
+ <matthew.yang204@gmail.com>
+Date: Thu, 8 Oct 2026 21:13:43 -0700
+Subject: [PATCH] Remove $MULTIOS entirely
+
+---
+ libiberty/Makefile.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/libiberty/Makefile.in b/libiberty/Makefile.in
+index bb07f28e..10f7ac45 100644
+--- a/libiberty/Makefile.in
++++ b/libiberty/Makefile.in
+@@ -364,7 +364,7 @@ install-strip: install
+ # multilib-specific flags, it's overridden by FLAGS_TO_PASS from the
+ # default multilib, so we have to take CFLAGS into account as well,
+ # since it will be passed the multilib flags.
+-MULTIOSDIR = `$(CC) $(CFLAGS)`
++MULTIOSDIR = .
+ install_to_libdir: all
+ 	if test -n "${target_header_dir}"; then \
+ 		${mkinstalldirs} $(DESTDIR)$(libdir)/$(MULTIOSDIR); \
+-- 
+2.56.0
+
