@@ -19,6 +19,7 @@ ARDUINO_PREPROCESSOR_VERSION=`cat Config.hpp | grep VERSION | sed 's/[^"]*"\([^"
 
 OUTPUT_VERSION=${ARDUINO_PREPROCESSOR_VERSION}
 MACOSXARCH="${MACOSXARCH:-$(uname -m)}"
+MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-10.9}"
 
 #
 # Clean up workspace
@@ -44,10 +45,6 @@ function fetch_llvm {
   if [ ! -f "$fetched" ]; then
     wget "$1"
   fi
-  if [ ! -f "$fetched.asc" ]; then
-    wget "$1.asc"
-  fi
-  gpg2 --status-fd 1 --no-default-keyring --homedir . --keyring "arduino_sources_gpg_pubkey.key" --trust-model always --verify "$fetched.asc"
 
   rm -rf clang
   mkdir clang
@@ -99,11 +96,15 @@ elif [[ $OS == "Msys" || $OS == "Cygwin" ]] ; then
 elif [[ $OS == "Darwin" ]] ; then
 
   #export PATH=/opt/local/libexec/gnubin/:/opt/local/bin:$PATH
-  export CC="gcc -arch $MACOSXARCH -mmacosx-version-min=10.9"
-  export CXX="g++ -arch $MACOSXARCH -mmacosx-version-min=10.9"
-  OUTPUT_TAG=x86_64-apple-darwin11
-  export CXXFLAGS="-stdlib=libc++ -std=c++11"
-  fetch_llvm https://github.com/cmaglie/llvm-clang-build-scripts/releases/download/4.0.0/llvm-clang-4.0.0-macosx-10.9-x86_64.tar.bz2
+  export CC="gcc -arch $MACOSXARCH -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET"
+  export CXX="g++ -arch $MACOSXARCH -mmacosx-version-min=$MACOSX_DEPLOYMENT_TARGET"
+  OUTPUT_TAG=$MACOSXARCH-apple-darwin
+  export CXXFLAGS="-stdlib=libc++ -std=c++17"
+  if [ "$MACOSXARCH" = "x86_64" ]; then
+  	fetch_llvm https://github.com/cmaglie/llvm-clang-build-scripts/releases/download/4.0.0/llvm-clang-4.0.0-macosx-10.9-x86_64.tar.bz2
+  else
+  	fetch_llvm https://github.com/llvm/llvm-project/releases/download/llvmorg-23.1.3/LLVM-23.1.3-macOS-ARM64.tar.xz
+  fi
   START_GROUP=""
   END_GROUP=""
 
@@ -121,6 +122,8 @@ fi
 
 CXXFLAGS="`clang/bin/llvm-config --cxxflags` $CXXFLAGS"
 LDFLAGS="`clang/bin/llvm-config --ldflags` -static-libstdc++"
+CXXFLAGS="${CXXFLAGS//-arch=x86_64/}"
+LDFLAGS="${LDFLAGS//-arch=x86_64/}"
 LLVMLIBS=`clang/bin/llvm-config --libs --system-libs`
 CLANGLIBS=`ls clang/lib/libclang*.a | sed s/.*libclang/-lclang/ | sed s/.a$//`
 SOURCES="main.cpp ArduinoDiagnosticConsumer.cpp CommandLine.cpp IdentifiersList.cpp CodeCompletion.cpp"
