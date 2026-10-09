@@ -13,7 +13,6 @@ At time of writing, the latest toolchain available is based on Atmel 3.6.1 versi
  - binutils-2.26
  - gcc-7.3.0 (patches here https://github.com/arduino/toolchain-avr/tree/staging/avr-gcc-patches)
  - avr-libc-2.0.0
- - gdb-7.8
  
 ### Building
 
