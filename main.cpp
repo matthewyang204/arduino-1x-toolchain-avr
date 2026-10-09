@@ -33,13 +33,13 @@
 #include <clang/AST/RecursiveASTVisitor.h>
 #include <clang/ASTMatchers/ASTMatchFinder.h>
 #include <clang/ASTMatchers/ASTMatchers.h>
-#include <clang/Driver/Options.h>
 #include <clang/Frontend/ASTConsumers.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/FrontendActions.h>
 #include <clang/Rewrite/Core/Rewriter.h>
 #include <clang/Tooling/CommonOptionsParser.h>
 #include <clang/Tooling/Tooling.h>
+#include <llvm/Config/llvm-config.h>
 
 #include <iostream>
 #include <sstream>
@@ -85,7 +85,7 @@ public:
 
         const FunctionDecl *f = match.Nodes.getNodeAs<FunctionDecl>("function_decl");
         if (f) {
-            FullSourceLoc loc = ctx->getFullLoc(f->getLocStart());
+            FullSourceLoc loc = ctx->getFullLoc(f->getBeginLoc());
             SourceRange r = f->getSourceRange();
             FullSourceLoc begin = ctx->getFullLoc(r.getBegin());
             FullSourceLoc end = ctx->getFullLoc(r.getEnd());
@@ -127,7 +127,7 @@ public:
 
             if (outputOnlyNeededPrototypes) {
                 // Check if this function is called and needs a forward declaration
-                IdentifierLocation *und = undeclaredIdentifiers.findFirst(f->getName());
+                IdentifierLocation *und = undeclaredIdentifiers.findFirst(f->getName().str());
                 if (!und) {
                     if (debugOutput) {
                         outs() << "  This function is not forward-called and do not need a prototype.\n";
@@ -165,13 +165,19 @@ public:
                 return;
             }
 
-            FullSourceLoc loc = ctx->getFullLoc(v->getLocStart());
+            FullSourceLoc loc = ctx->getFullLoc(v->getBeginLoc());
             SourceRange r = v->getSourceRange();
             FullSourceLoc begin = ctx->getFullLoc(r.getBegin());
             FullSourceLoc end = ctx->getFullLoc(r.getEnd());
 
             if (debugOutput) {
-                outs() << "Variable " << v->getName() << " declared at ";
+                outs() << "Variable ";
+                if (v->getIdentifier()) {
+                    outs() << v->getNameAsString();
+                } else {
+                    outs() << "(anonymous)";
+                }
+                outs() << " declared at ";
                 outs() << loc.getSpellingLineNumber() << ":" << loc.getSpellingColumnNumber();
                 outs() << " (range " << begin.getSpellingLineNumber() << ":" << begin.getSpellingColumnNumber();
                 outs() << " to " << end.getSpellingLineNumber() << ":" << end.getSpellingColumnNumber() << ")\n";
@@ -277,8 +283,13 @@ public:
         const RewriteBuffer *buf = rewriter.getRewriteBufferFor(mainFileID);
         if (buf == nullptr) {
             // No changes needed, output the source file as-is
+#if LLVM_VERSION_MAJOR >= 16
+            auto buff = rewriter.getSourceMgr().getBufferOrFake(mainFileID);
+            preprocessedSketch = buff.getBuffer().str();
+#else
             auto buff = rewriter.getSourceMgr().getBuffer(mainFileID);
             preprocessedSketch = buff->getBuffer().str();
+#endif
         } else {
             preprocessedSketch = string(buf->begin(), buf->end());
         }

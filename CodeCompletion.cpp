@@ -28,6 +28,7 @@
  */
 
 #include <clang/Basic/TargetInfo.h>
+#include <clang/Basic/LangStandard.h>
 #include <clang/Frontend/CompilerInstance.h>
 #include <clang/Frontend/FrontendOptions.h>
 #include <clang/Frontend/FrontendActions.h>
@@ -36,6 +37,12 @@
 #include <clang/Sema/Sema.h>
 #include <clang/Sema/CodeCompleteOptions.h>
 #include <clang/Sema/CodeCompleteConsumer.h>
+#include <llvm/Config/llvm-config.h>
+#if LLVM_VERSION_MAJOR >= 16
+#include <llvm/TargetParser/Host.h>
+#else
+#include <llvm/Support/Host.h>
+#endif
 
 #include <iostream>
 
@@ -55,7 +62,11 @@ class CustomCodeCompleteConsumer : public CodeCompleteConsumer {
 
 public:
 
+#if LLVM_VERSION_MAJOR >= 16
+    CustomCodeCompleteConsumer(const CodeCompleteOptions &opts, SourceManager &sm) : CodeCompleteConsumer(opts),
+#else
     CustomCodeCompleteConsumer(const CodeCompleteOptions &opts, SourceManager &sm) : CodeCompleteConsumer(opts, false),
+#endif
     TUInfo(std::make_shared<GlobalCodeCompletionAllocator>()), output(json::array()), sm(sm) {
     }
 
@@ -136,9 +147,15 @@ void DoCodeCompletion(const string &filename, const string &code, int line, int 
     // Hide diagnostics
     ci.getDiagnostics().setClient(new IgnoringDiagConsumer());
 
+#if LLVM_VERSION_MAJOR >= 16
+    clang::TargetOptions tOpts;
+    tOpts.Triple = sys::getDefaultTargetTriple();
+    ci.setTarget(TargetInfo::CreateTargetInfo(ci.getDiagnostics(), tOpts));
+#else
     shared_ptr<clang::TargetOptions> tOpts = make_shared<clang::TargetOptions>();
     tOpts->Triple = sys::getDefaultTargetTriple();
     ci.setTarget(TargetInfo::CreateTargetInfo(ci.getDiagnostics(), tOpts));
+#endif
 
     LangOptions &lOpts = ci.getLangOpts();
     lOpts.CPlusPlus = true;
@@ -147,7 +164,11 @@ void DoCodeCompletion(const string &filename, const string &code, int line, int 
     lOpts.GNUMode = true;
 
     ci.createFileManager();
+#if LLVM_VERSION_MAJOR >= 16
+    ci.createSourceManager();
+#else
     ci.createSourceManager(ci.getFileManager());
+#endif
 
     CodeCompleteOptions ccOpts;
     ccOpts.IncludeMacros = 1;
@@ -158,7 +179,11 @@ void DoCodeCompletion(const string &filename, const string &code, int line, int 
     ci.setCodeCompletionConsumer(ccConsumer);
 
     FrontendOptions& fOpts = ci.getFrontendOpts();
+#if LLVM_VERSION_MAJOR >= 16
+    fOpts.Inputs.push_back(FrontendInputFile(filename, InputKind(Language::CXX)));
+#else
     fOpts.Inputs.push_back(FrontendInputFile(filename, InputKind::IK_CXX));
+#endif
     fOpts.CodeCompletionAt.FileName = filename;
     fOpts.CodeCompletionAt.Line = line;
     fOpts.CodeCompletionAt.Column = col;

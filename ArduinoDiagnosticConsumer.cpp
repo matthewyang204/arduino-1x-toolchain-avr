@@ -28,6 +28,7 @@
  */
 
 #include <clang/Basic/Diagnostic.h>
+#include <clang/Basic/DiagnosticSema.h>
 
 #include "ArduinoDiagnosticConsumer.hpp"
 #include "CommandLine.hpp"
@@ -65,7 +66,8 @@ void ArduinoDiagnosticConsumer::HandleDiagnostic(DiagnosticsEngine::Level level,
         }
 
         unsigned id = info.getID();
-        if (id == 3441 || id == 3442 /* use of undeclared identifier */) {
+        if (id == diag::err_undeclared_var_use ||
+            id == diag::err_undeclared_var_use_suggest) {
             // It seems that the only way to retrieve the undeclared symbol
             // is to print it as a localization string.
             const char *fmt = "%0";

@@ -31,6 +31,8 @@
 #include "Config.hpp"
 #include "utils.hpp"
 
+#include <llvm/Config/llvm-config.h>
+
 #include <iostream>
 #include <sstream>
 
@@ -52,38 +54,46 @@ static cl::extrahelp arduinoHelp("\n"
         "\n"
         );
 static cl::extrahelp commonHelp(CommonOptionsParser::HelpMessage);
-static cl::opt<bool> debugOutputOpt("debug");
-static cl::opt<bool> outputOnlyNeededPrototypesOpt("output-only-needed-prototypes");
-static cl::opt<bool> outputDiagnosticsOpt("output-diagnostics");
-static cl::opt<string> outputCodeCompletionsOpt("output-code-completions");
+static cl::opt<bool> debugOutputOpt(
+        "debug", cl::desc("Print debugging messages from Arduino preprocessor"),
+        cl::init(false), cl::cat(arduinoToolCategory));
+static cl::opt<bool> outputOnlyNeededPrototypesOpt(
+        "output-only-needed-prototypes",
+        cl::desc("Output a prototype only if a forward declaration is needed (experimental)"),
+        cl::init(false), cl::cat(arduinoToolCategory));
+static cl::opt<bool> outputDiagnosticsOpt(
+        "output-diagnostics",
+        cl::desc("Output diagnostics (warnings/errors) in json format"),
+        cl::init(false), cl::cat(arduinoToolCategory));
+static cl::opt<string> outputCodeCompletionsOpt(
+        "output-code-completions",
+        cl::desc("Output code completions (suggestions) in json format.\n"
+                 "This option requires the cursor position in the format \"filename:line:col\""),
+        cl::init(""), cl::cat(arduinoToolCategory));
 
+#if LLVM_VERSION_MAJOR >= 16
+static void printVersion(raw_ostream &out) {
+#else
 static void printVersion() {
-    outs() << "Arduino (https://www.arduino.cc/):\n";
-    outs() << "  arduino-preprocessor version " VERSION "\n";
+    raw_ostream &out = outs();
+#endif
+    out << "Arduino (https://www.arduino.cc/):\n";
+    out << "  arduino-preprocessor version " VERSION "\n";
 }
 
 CommonOptionsParser doCommandLineParsing(int argc, const char **argv) {
-    debugOutputOpt.setCategory(arduinoToolCategory);
-    debugOutputOpt.setInitialValue(false);
-    debugOutputOpt.setDescription("Print debugging messages from Arduino preprocessor");
-
-    outputOnlyNeededPrototypesOpt.setCategory(arduinoToolCategory);
-    outputOnlyNeededPrototypesOpt.setInitialValue(false);
-    outputOnlyNeededPrototypesOpt.setDescription("Output a prototype only if a forward declaration is needed (experimental)");
-
-    outputDiagnosticsOpt.setCategory(arduinoToolCategory);
-    outputDiagnosticsOpt.setInitialValue(false);
-    outputDiagnosticsOpt.setDescription("Output diagnostics (warnings/errors) in json format");
-
-    outputCodeCompletionsOpt.setCategory(arduinoToolCategory);
-    outputCodeCompletionsOpt.setInitialValue("");
-    outputCodeCompletionsOpt.setDescription(
-            "Output code completions (suggestions) in json format.\n"
-            "This option requires the cursor position in the format \"filename:line:col\"");
-
     cl::AddExtraVersionPrinter(printVersion);
 
+#if LLVM_VERSION_MAJOR >= 16
+    auto parserExpected = CommonOptionsParser::create(argc, argv, arduinoToolCategory);
+    if (!parserExpected) {
+        errs() << toString(parserExpected.takeError()) << "\n";
+        exit(1);
+    }
+    CommonOptionsParser optParser = std::move(*parserExpected);
+#else
     CommonOptionsParser optParser(argc, argv, arduinoToolCategory);
+#endif
 
     /* Parse outputCodeCompletion parameter */
     if (outputCodeCompletionsOpt.getValue() != "") {
