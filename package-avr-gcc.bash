@@ -76,9 +76,14 @@ elif [[ $OS == "Msys" || $OS == "Cygwin" ]] ; then
 elif [[ $OS == "Darwin" ]] ; then
 
   export PATH=/opt/local/libexec/gnubin/:/opt/local/bin:$PATH
-  export CC="gcc -arch x86_64 -mmacosx-version-min=10.8"
-  export CXX="g++ -arch x86_64 -mmacosx-version-min=10.8"
-  OUTPUT_TAG=x86_64-apple-darwin14
+  UNAME_INFO=$(uname -a)
+  MACOSX_ARCH=${MACOSX_ARCH:-$(echo "$UNAME_INFO" | awk '{print $NF}')}
+  MACOSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-10.8}
+  DARWIN_VERSION=${DARWIN_VERSION:-$(echo "$UNAME_INFO" | awk '{split($3, version, "."); print version[1]}')}
+  export MACOSX_ARCH MACOSX_DEPLOYMENT_TARGET DARWIN_VERSION
+  export CC="gcc -arch ${MACOSX_ARCH} -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+  export CXX="g++ -arch ${MACOSX_ARCH} -mmacosx-version-min=${MACOSX_DEPLOYMENT_TARGET}"
+  OUTPUT_TAG=${MACOSX_ARCH}-apple-darwin${DARWIN_VERSION}
 
 else
 
