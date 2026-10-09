@@ -1,0 +1,15 @@
+diff -r -u a/gcc/config.host b/gcc/config.host
+--- a/gcc/config.host	2017-01-10 10:00:43
++++ b/gcc/config.host	2026-05-25 12:20:12
+@@ -93,8 +93,9 @@
+ case ${host} in
+   *-darwin*)
+     # Generic darwin host support.
+-    out_host_hook_obj=host-darwin.o
+-    host_xmake_file="${host_xmake_file} x-darwin"
++    #https://github.com/riscv-software-src/homebrew-riscv/issues/47#issuecomment-772306695
++    #out_host_hook_obj=host-darwin.o
++    #host_xmake_file="${host_xmake_file} x-darwin"
+     ;;
+ esac
+ 

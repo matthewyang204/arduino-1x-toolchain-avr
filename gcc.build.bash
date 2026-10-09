@@ -19,47 +19,39 @@ source build.conf
 
 if [[ ! -d toolsdir  ]] ;
 then
-	echo "You must first build the tools: run build_tools.bash"
+	echo "You must first build the tools: run tools.bash"
 	exit 1
+fi
+
+if [[ ! -d hostlibs ]] ;
+then
+        echo "You must first build the prerequisit libraries: run prereq.build.bash"
+        exit 1
 fi
 
 cd toolsdir/bin
 TOOLS_BIN_PATH=`pwd`
 cd -
 
+cd hostlibs
+HOSTLIBS=`pwd`
+cd ..
+
 export PATH="$TOOLS_BIN_PATH:$PATH"
-
-if [[ ! -f gmp-${GMP_VERSION}.tar.bz2  ]] ;
-then
-	wget ${GMP_SOURCE}
-fi
-
-tar xf gmp-${GMP_VERSION}.tar.bz2
-
-if [[ ! -f mpfr-${MPFR_VERSION}.tar.bz2  ]] ;
-then
-	wget ${MPFR_SOURCE}
-fi
-
-tar xf mpfr-${MPFR_VERSION}.tar.bz2
-
-if [[ ! -f mpc-${MPC_VERSION}.tar.gz  ]] ;
-then
-	wget ${MPC_SOURCE}
-fi
-
-tar xf mpc-${MPC_VERSION}.tar.gz
 
 if [[ ! -f gcc-7.3.0.tar.xz ]] ;
 then
 	wget https://ftp.gnu.org/gnu/gcc/gcc-7.3.0/gcc-7.3.0.tar.xz
 fi
 
+rm -rf gcc gcc-7.3.0 gcc-build
 tar xf gcc-7.3.0.tar.xz
 mv gcc-7.3.0 gcc
 
 # Apply the right patchset
 cd gcc && patch -p1 < ../avr-gcc-patches/atmel-patches-gcc.7.3.0-arduino2.patch && cd ..
+cd gcc && patch -p1 < ../avr-gcc-patches/zlib_fdopen_include.patch && cd ..
+cd gcc && patch -p1 < ../avr-gcc-patches/disable_pch.patch && cd ..
 
 #pushd gcc
 #pushd gcc/config/avr/
@@ -75,10 +67,6 @@ cd gcc && patch -p1 < ../avr-gcc-patches/atmel-patches-gcc.7.3.0-arduino2.patch 
 #autoconf
 #popd
 #popd
-
-mv gmp-${GMP_VERSION} gcc/gmp
-mv mpfr-${MPFR_VERSION} gcc/mpfr
-mv mpc-${MPC_VERSION} gcc/mpc
 
 mkdir -p objdir
 cd objdir
@@ -103,7 +91,14 @@ CONFARGS=" \
     --with-avrlibc=yes \
 	--with-dwarf2 \
     --disable-doc \
+	--build=aarch64-apple-darwin \
+	--host=aarch64-apple-darwin \
+	--with-system-zlib \
+	--with-gmp=$HOSTLIBS \
+	--with-mpfr=$HOSTLIBS \
+	--with-mpc=$HOSTLIBS \
 	--target=avr"
+
 
 CFLAGS="-w -O2 -g0 $CFLAGS" CXXFLAGS="-w -O2 -g0 $CXXFLAGS" LDFLAGS="-s $LDFLAGS" ../gcc/configure $CONFARGS $EXTRA_CONFARGS
 

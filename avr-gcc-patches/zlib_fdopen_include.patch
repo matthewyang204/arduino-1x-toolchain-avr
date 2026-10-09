@@ -1,0 +1,14 @@
+diff -u -r a/zlib/zutil.h b/zlib/zutil.h
+--- a/zlib/zutil.h	2017-01-13 04:10:39
++++ b/zlib/zutil.h	2026-05-25 11:46:51
+@@ -136,9 +136,7 @@
+ #    if defined(__MWERKS__) && __dest_os != __be_os && __dest_os != __win32_os
+ #      include <unix.h> /* for fdopen */
+ #    else
+-#      ifndef fdopen
+-#        define fdopen(fd,mode) NULL /* No fdopen() */
+-#      endif
++#      include <stdio.h>
+ #    endif
+ #  endif
+ #endif
